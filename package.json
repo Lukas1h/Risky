@@ -1,0 +1,30 @@
+{
+  "name": "risky",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack serve --open",
+    "watch": "webpack --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lukas1h/Risky.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lukas1h/Risky/issues"
+  },
+  "homepage": "https://github.com/Lukas1h/Risky#readme",
+  "dependencies": {
+    "html-webpack-plugin": "^5.5.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1"
+  }
+}
