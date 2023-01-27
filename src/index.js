@@ -222,24 +222,26 @@ function render(){
 
             clickedPlaneFirst = true
 
-
             if(mode == "move"){
 
-                
                 infoTab.removeAttribute("hidden")
                 infoTab.style.left = cursor_x + "px"
                 infoTab.style.top = cursor_y + "px"
 
             }
+
             document.getElementById('del').addEventListener("click",()=>{
-                
+
                 var index = planeNode.getAttribute("myAttr")
                 pieces.splice(index,1)
                 gameRef.set(JSON.stringify(pieces));
                 console.log(JSON.stringify(pieces))
+
+                infoTab.setAttribute("hidden","")
                 render()
-            })
-            
+
+
+            })            
         })
 
 
