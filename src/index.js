@@ -22,6 +22,8 @@ if(id != null){
 
 
 
+
+
 firebase.initializeApp(firebaseConfig);
 console.log('games/'+id)
 var gameRef = firebase.database().ref('games/'+id);
@@ -36,7 +38,12 @@ gameRef.on('value', (snapshot) => {
   console.log(JSON.parse(data))
 
 
-  pieces = JSON.parse(data)
+
+  if(JSON.parse(data) == null){
+    alert('creating new room')
+  }else{
+    pieces = JSON.parse(data)
+  }
   render()
 
 
@@ -120,9 +127,9 @@ document.getElementById("place").addEventListener("click",()=>{
     mode = "place"
 })
 
-document.getElementById("fire").addEventListener("click",()=>{
-    mode = "fire"
-})
+// document.getElementById("fire").addEventListener("click",()=>{
+//     mode = "fire"
+// })
 
 document.getElementById("move").addEventListener("click",()=>{
     mode = "move"
@@ -170,6 +177,7 @@ function click(){
         infoTab.removeAttribute("hidden")
         infoTab.style.left = cursor_x + "px"
         infoTab.style.top = cursor_y + "px"
+
     }
 }
 
@@ -210,8 +218,35 @@ function render(){
     pieces.forEach((pieceInfo)=>{
         var planeNode = moveSection(pieceInfo.pos.x, pieceInfo.pos.y)
 
-        planeNode.setAttribute("onclick","click()")
+        planeNode.addEventListener("click",()=>{
+
+            clickedPlaneFirst = true
+
+
+            if(mode == "move"){
+
+                
+                infoTab.removeAttribute("hidden")
+                infoTab.style.left = cursor_x + "px"
+                infoTab.style.top = cursor_y + "px"
+
+            }
+            document.getElementById('del').addEventListener("click",()=>{
+                
+                var index = planeNode.getAttribute("myAttr")
+                pieces.splice(index,1)
+                gameRef.set(JSON.stringify(pieces));
+                console.log(JSON.stringify(pieces))
+                render()
+            })
+            
+        })
+
+
+
         planeNode.setAttribute("myAttr",pieceInfo.index)
+
+
 
         const divMove = (e)=>{
             if("touches" in e){
@@ -257,7 +292,8 @@ function render(){
 
             var transformAttr = ' translate(' + ( transX ) + ',' + ( transY ) + ')';
 
-            planeNode.setAttribute('transform', transformAttr + "rotate(180)" + "scale(0.4)");
+            planeNode.setAttribute('transform', transformAttr + "rotate(180)" + "scale(0.5)");
+            planeNode.children[0].setAttribute("fill","gray")
 
 
         }
@@ -273,6 +309,9 @@ function render(){
 
             pieces[pieceInfo.index].pos.x = e.clientX
             pieces[pieceInfo.index].pos.y = e.clientY
+            gameRef.set(JSON.stringify(pieces));
+            console.log(JSON.stringify(pieces))
+
         }, false);
 
 
@@ -313,6 +352,8 @@ function render(){
         svg.append(planeNode)
     })
 }
+
+
 
 
 // setInterval(render,150)
