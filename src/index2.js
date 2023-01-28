@@ -41,8 +41,21 @@ document.onmousemove = function(event){
 }
 
 
+var frame = {
+  start: null,
+  delta: null,
+  count: 0
+};
+
+const INTERVAL = 16;
+
+
 console.log('games/'+id)
 var gameRef = firebase.database().ref('games/'+id);
+
+
+var canvas = document.getElementById("canvas")
+var ctx = canvas.getContext("2d");
 
 
 var players = [{
@@ -52,6 +65,47 @@ var players = [{
     pieces:[],
     name:"playerTwoo"
 }]
+
+var game = {
+    islands:[
+        {
+            start:{ x: 0,    y: canvas.height-50  },
+            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-50-10  },
+            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-50-20  },
+            end:{ x: 0+canvas.width,   y:  canvas.height-50 },
+        },
+        {
+            start:{ x: 0,    y: canvas.height-50  },
+            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-50-10  },
+            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-50-20  },
+            end:{ x: 0+canvas.width,   y:  canvas.height-50 },
+        },
+    ],
+    players:[{
+        pieces:[],
+        name:"playerOne",
+        mode:'ple',
+        placeType:"plane"
+    },{
+        pieces:[],
+        name:"playerTwoo",
+        mode:'place'
+    }]
+}
+
+const mode = "place"
+var placeType = "plane"
+
+
+document.getElementById("plane").addEventListener("click",()=>{
+    console.log("place type plane")
+    placeType = "plane"
+})
+
+document.getElementById("ship").addEventListener("click",()=>{
+    console.log("place type ship")
+    placeType = "ship"
+})
 
 
 gameRef.on('value', (snapshot) => {
@@ -65,7 +119,7 @@ gameRef.on('value', (snapshot) => {
   if(JSON.parse(data) == null){
     console.log('creating new room')
   }else{
-    players = JSON.parse(data)
+    game = JSON.parse(data)
   }
   render()
 
@@ -73,39 +127,48 @@ gameRef.on('value', (snapshot) => {
 });
 
 
-var canvas = document.getElementById("canvas")
-var ctx = canvas.getContext("2d");
+const planeImg = new Image();
+planeImg.src = "icons/plane.png"
 
 
-
+const shipImg = new Image();
+shipImg.src = "icons/ship.png"
 
 canvas.addEventListener("click",(e)=>{
-    players[player-1].pieces.push({
-        pos:{
-            x:cursor_x,
-            y:cursor_y
-        }
-    })
-    console.log(players)
+    if(mode == "place"){
+        game.players[player-1].pieces.push({
+            pos:{
+                x:cursor_x,
+                y:cursor_y-50,
+            },
+            type:placeType
+        })
 
-    gameRef.set(JSON.stringify(players))
-    render()
+        gameRef.set(JSON.stringify(game))
+        render()
+    }else{
+        console.log(mode)
+    }
 })
 
 
 
-function render(){
 
+function render(){
+     ctx.clearRect(0, 0, canvas.width, canvas.height); 
 
 
     renderUI()
+    drawIslandP1()
+    drawIslandP2()
+    // drawIslandP2(canvas.width,50,-canvas.width)
     
     // renderIsland()
 
     for(var playerNum = 1; playerNum<=2;playerNum++){
-        players[playerNum-1].pieces.forEach((piece,index)=>{
-            console.log("drawing, ",piece.pos.x,piece.pos.y)
-            drawPieceAt(piece.pos.x,piece.pos.y,playerNum)
+        game.players[playerNum-1].pieces.forEach((piece,index)=>{
+            console.log("drawing, ", piece.type)
+            drawPieceAt(piece.pos.x,piece.pos.y,playerNum,piece.type)
             
         })
     }
@@ -114,52 +177,34 @@ function render(){
 
 
 
-function renderIsland(){
-    iWidth = 336.36
-
-    islandNode = rc.path(island, {roughness: 0.8,fill:"rgba(0,0,0,0.1)",combineNestedSvgPaths: true,seed:1})
-
-    islandNode.firstChild.setAttribute("vector-effect","non-scaling-stroke")
-    islandNode.firstChild.setAttribute('transform', `scale(${(568 / iWidth) + 0.1},1) translate(-5,-5)`);
-    
-    islandNode.children[1].setAttribute('stroke-width', `2`);
-    islandNode.children[1].setAttribute("vector-effect","non-scaling-stroke")
-    islandNode.children[1].setAttribute('transform', `scale(${(568 / iWidth) + 0.1},1) translate(-5,-5)`);
-
-
-    islandNode2 = rc.path(island, {roughness: 0.8,fill:"rgba(0,0,0,0.1)",combineNestedSvgPaths: true,seed:1})
-    
-    islandNode2.firstChild.setAttribute("vector-effect","non-scaling-stroke")
-    islandNode2.firstChild.setAttribute('transform', `scale(${(568 / iWidth) + 0.1},1)  rotate(180) translate(${-iWidth},${-568})`);
-    
-    islandNode2.children[1].setAttribute('stroke-width', `2`);
-    islandNode2.children[1].setAttribute("vector-effect","non-scaling-stroke")
-    islandNode2.children[1].setAttribute('transform', `scale(${(568 / iWidth) + 0.1},1)  rotate(180) translate(${-iWidth +5},${-568})`);
-
-    // islandNode = document.createElement("img")
-    // islandNode.style.position = 'absolute';
-    // islandNode.style.width = "320px"
-    // islandNode.style.height = "100px"
 
 
 
-    // if(1 == player){
-    //     islandNode.style.rotate = "180deg"
-    //     islandNode.style.top = 0 +'px';
-    //     islandNode.style.left = 0 + 'px';
-    // }else{
-    //     islandNode.style.rotate = "180deg"
-    // }
+function drawIslandP1(){
+  let start = game.islands[0].start
+  let cp1 =   game.islands[0].cp1
+  let cp2 =   game.islands[0].cp2
+  let end =   game.islands[0].end
 
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+  ctx.stroke();
 
-    // islandNode.src = "icons/islandPlayerOne.svg"
-
-
-
-
-    svg.append(islandNode) 
-    svg.append(islandNode2)
 }
+
+function drawIslandP2(){
+    let start = game.islands[1].start
+    let cp1 =   game.islands[1].cp1
+    let cp2 =   game.islands[1].cp2
+    let end =   game.islands[1].end
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - start.x, canvas.height - start.y); //canvas.height - start.y
+    ctx.bezierCurveTo(canvas.width - cp1.x, canvas.height - cp1.y, canvas.width - cp2.x, canvas.height - cp2.y, canvas.width - end.x, canvas.height - end.y);
+    ctx.stroke();
+}
+
 
 
 function renderUI(){
@@ -168,26 +213,24 @@ function renderUI(){
 }
 
 
-function drawPieceAt(xOffset, yOffset,p) {
-
+function drawPieceAt(xOffset, yOffset,p,typee) {
 
     if(p == player){
-        const img = new Image();
-        img.onload = ()=>{
-
-            drawImage(ctx,img,xOffset-25,yOffset-25,50,50,180);
+        if(typee == "plane"){
+            console.log("type is ",typee)
+            drawImage(ctx,planeImg,xOffset-25,yOffset-25,50,50,180);
+        }else{
+            drawImage(ctx,shipImg,xOffset-25,yOffset-25,50,50,180);
         }
-        img.src = "icons/plane.png"
     }else{
         var x = 320 - xOffset
         var y = 568 - yOffset
-
-
-        const img = new Image();
-        img.onload = ()=>{
-            drawImage(ctx,img,320-xOffset-25,568-yOffset-25,50,50,0);
+        console.log("type is ",typee)
+        if(typee == "plane"){
+            drawImage(ctx,planeImg,320-xOffset-25,568-yOffset-25,50,50,0);
+        }else{
+            drawImage(ctx,shipImg,320-xOffset-25,568-yOffset-25,50,50,0);
         }
-        img.src = "icons/plane.png"
     }
 
 
@@ -198,6 +241,7 @@ function drawPieceAt(xOffset, yOffset,p) {
 
 
 render()
+
 
 
 
