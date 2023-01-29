@@ -150,7 +150,7 @@ groundImg.onload = () => { // Only use the image after it's loaded
 canvas.addEventListener("click",(e)=>{
 
     if(mode == "place"){
-        if(placeType == "plane" && isPointOnSide(cursor_x,cursor_y-50)){
+        if(placeType == "plane" && isPointOnSide(cursor_x,cursor_y)){
             game.players[player-1].pieces.push({
                 pos:{
                     x:cursor_x,
@@ -160,7 +160,7 @@ canvas.addEventListener("click",(e)=>{
             })
         }
 
-        if(placeType == "ship" && !isPointOnLand(cursor_x,cursor_y-50) && isPointOnSide(cursor_x,cursor_y-50)){
+        if(placeType == "ship" && !isPointOnLand(cursor_x,cursor_y) && isPointOnSide(cursor_x,cursor_y)){
             game.players[player-1].pieces.push({
                 pos:{
                     x:cursor_x,
