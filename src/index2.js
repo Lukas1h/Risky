@@ -140,6 +140,8 @@ groundImg.src = "icons/forest_tiles.png"
 
 var pattern = ctx.createPattern(groundImg, "repeat");
 
+var debug = false
+
 
 groundImg.onload = () => { // Only use the image after it's loaded
   pattern = ctx.createPattern(groundImg, "repeat");
@@ -148,11 +150,16 @@ groundImg.onload = () => { // Only use the image after it's loaded
 
 
 canvas.addEventListener("click",(e)=>{
-    alert("Trying to place piece")
+    if(debug){
+        alert("Trying to place piece")
+    }
+    alert("screen shot this, " + cursor_x + "x" + (cursor_y-50))
     if(mode == "place"){
         if(placeType == "plane"){
             if(isPointOnSide(cursor_x,cursor_y-50)){
-                alert("Placing Plane")
+                if(debug){
+                    alert("Placing Plane")
+                }
                 game.players[player-1].pieces.push({
                     pos:{
                         x:cursor_x,
@@ -161,7 +168,9 @@ canvas.addEventListener("click",(e)=>{
                     type:placeType
                 })
             }else{
-                alert("Cant place. Not on side.")
+                if(debug){
+                    alert("Cant place. Not on side.")
+                }
             }
         }
 
@@ -178,10 +187,14 @@ canvas.addEventListener("click",(e)=>{
                     type:placeType
                 })
                 }else{
-                    alert("Cant place. Not on side.")
+                    if(debug){
+                        alert("Cant place. Not on side.")
+                    }
                 }
             }else{
-                alert("Cant place. Not on land.")
+                if(debug){
+                    alert("Cant place. Not on land.")
+                }
             }
 
         }
