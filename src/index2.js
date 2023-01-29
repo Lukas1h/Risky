@@ -148,26 +148,42 @@ groundImg.onload = () => { // Only use the image after it's loaded
 
 
 canvas.addEventListener("click",(e)=>{
-
+    alert("Trying to place piece")
     if(mode == "place"){
-        if(placeType == "plane" && isPointOnSide(cursor_x,cursor_y-50)){
-            game.players[player-1].pieces.push({
-                pos:{
-                    x:cursor_x,
-                    y:cursor_y-50,
-                },
-                type:placeType
-            })
+        if(placeType == "plane"){
+            if(isPointOnSide(cursor_x,cursor_y-50)){
+                alert("Placing Plane")
+                game.players[player-1].pieces.push({
+                    pos:{
+                        x:cursor_x,
+                        y:cursor_y-50,
+                    },
+                    type:placeType
+                })
+            }else{
+                alert("Cant place. Not on side.")
+            }
         }
 
-        if(placeType == "ship" && !isPointOnLand(cursor_x,cursor_y-50) && isPointOnSide(cursor_x,cursor_y-50)){
-            game.players[player-1].pieces.push({
-                pos:{
-                    x:cursor_x,
-                    y:cursor_y-50,
-                },
-                type:placeType
-            })
+        if(placeType == "ship" &&){
+            if(!isPointOnLand(cursor_x,cursor_y-50)){
+                alert("Trying to place boat on water.")
+                if(isPointOnSide(cursor_x,cursor_y-50)){
+                    alert("Placing Boat")
+                    game.players[player-1].pieces.push({
+                    pos:{
+                        x:cursor_x,
+                        y:cursor_y-50,
+                    },
+                    type:placeType
+                })
+                }else{
+                    alert("Cant place. Not on side.")
+                }
+            }else{
+                alert("Cant place. Not on land.")
+            }
+
         }
 
 
