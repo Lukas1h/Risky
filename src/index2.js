@@ -69,16 +69,16 @@ var players = [{
 var game = {
     islands:[
         {
-            start:{ x: 0,    y: canvas.height-50  },
-            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-50-10  },
-            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-50-20  },
-            end:{ x: 0+canvas.width,   y:  canvas.height-50 },
+            start:{ x: 0,    y: canvas.height-  70},
+            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-70-10  },
+            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-70-20  },
+            end:{ x: 0+canvas.width,   y:  canvas.height-70 },
         },
         {
-            start:{ x: 0,    y: canvas.height-50  },
-            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-50-10  },
-            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-50-20  },
-            end:{ x: 0+canvas.width,   y:  canvas.height-50 },
+            start:{ x: 0,    y: canvas.height-70  },
+            cp1:{ x: 0+(canvas.width*0.25),   y: canvas.height-70-10  },
+            cp2:{ x: 0+(canvas.width*0.75) ,   y: canvas.height-70-20  },
+            end:{ x: 0+canvas.width,   y:  canvas.height-70 },
         },
     ],
     players:[{
@@ -128,21 +128,48 @@ gameRef.on('value', (snapshot) => {
 
 
 const planeImg = new Image();
-planeImg.src = "icons/plane.png"
+planeImg.src = "icons/plane1.png"
 
 
 const shipImg = new Image();
-shipImg.src = "icons/ship.png"
+shipImg.src = "icons/boat.png"
+
+
+const groundImg = new Image();
+groundImg.src = "icons/forest_tiles.png"
+
+var pattern = ctx.createPattern(groundImg, "repeat");
+
+
+groundImg.onload = () => { // Only use the image after it's loaded
+  pattern = ctx.createPattern(groundImg, "repeat");
+  render()
+};
+
 
 canvas.addEventListener("click",(e)=>{
+
     if(mode == "place"){
-        game.players[player-1].pieces.push({
-            pos:{
-                x:cursor_x,
-                y:cursor_y-50,
-            },
-            type:placeType
-        })
+        if(placeType == "plane" && isPointOnSide(cursor_x,cursor_y-50)){
+            game.players[player-1].pieces.push({
+                pos:{
+                    x:cursor_x,
+                    y:cursor_y-50,
+                },
+                type:placeType
+            })
+        }
+
+        if(placeType == "ship" && !isPointOnLand(cursor_x,cursor_y-50) && isPointOnSide(cursor_x,cursor_y-50)){
+            game.players[player-1].pieces.push({
+                pos:{
+                    x:cursor_x,
+                    y:cursor_y-50,
+                },
+                type:placeType
+            })
+        }
+
 
         gameRef.set(JSON.stringify(game))
         render()
@@ -161,9 +188,7 @@ function render(){
     renderUI()
     drawIslandP1()
     drawIslandP2()
-    // drawIslandP2(canvas.width,50,-canvas.width)
     
-    // renderIsland()
 
     for(var playerNum = 1; playerNum<=2;playerNum++){
         game.players[playerNum-1].pieces.forEach((piece,index)=>{
@@ -175,23 +200,112 @@ function render(){
 
 }
 
+function isPointOnSide(px,py){
+
+    return !(canvas.height - py > 150)
+}
+
+function isPointOnLand(px,py){
+
+
+    let start = game.islands[0].start
+    let cp1 =   game.islands[0].cp1
+    let cp2 =   game.islands[0].cp2
+    let end =   game.islands[0].end
+
+    let x = start.x
+    let y = start.y
+
+    let curves = [
+        [start.x, start.y, cp1.x , cp1.y],
+        [cp2.x, cp2.y, end.x, end.y]
+    ]
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let i = 0; i < curves.length; i++) {
+        let c = curves[i];
+        ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(0, canvas.height);
+
+    return ctx.isPointInPath(px , py)
+
+
+}
+
+function checkPoint(x, y, curves, canvasColor, strokeStyle) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for (let i = 0; i < curves.length; i++) {
+    let c = curves[i];
+    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
+  }
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.lineTo(0, canvas.height);
+
+  ctx.fillStyle = pattern;
+  ctx.fill();
+
+}
+
+
+
+
+function drawCurve(x, y, curves, canvasColor, strokeStyle) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for (let i = 0; i < curves.length; i++) {
+    let c = curves[i];
+    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
+  }
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.lineTo(0, canvas.height);
+
+  ctx.fillStyle = pattern;
+  ctx.fill();
+}
+
+
+function drawCurve2(x, y, curves, canvasColor, strokeStyle) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for (let i = 0; i < curves.length; i++) {
+    let c = curves[i];
+    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
+  }
+  ctx.lineTo(0, 0);
+  ctx.lineTo(canvas.width, 0);
+
+  ctx.fillStyle = pattern;
+  ctx.fill();
+}
 
 
 
 
 
 function drawIslandP1(){
+
   let start = game.islands[0].start
   let cp1 =   game.islands[0].cp1
   let cp2 =   game.islands[0].cp2
   let end =   game.islands[0].end
 
-  ctx.beginPath();
-  ctx.moveTo(start.x, start.y);
-  ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-  ctx.stroke();
 
+  console.log(start,cp1,cp2,end)
+    drawCurve(
+        start.x,
+        start.y, [
+            [start.x, start.y, cp1.x , cp1.y],
+            [cp2.x, cp2.y, end.x, end.y]
+        ],
+        pattern
+    );
 }
+
+
 
 function drawIslandP2(){
     let start = game.islands[1].start
@@ -203,6 +317,15 @@ function drawIslandP2(){
     ctx.moveTo(canvas.width - start.x, canvas.height - start.y); //canvas.height - start.y
     ctx.bezierCurveTo(canvas.width - cp1.x, canvas.height - cp1.y, canvas.width - cp2.x, canvas.height - cp2.y, canvas.width - end.x, canvas.height - end.y);
     ctx.stroke();
+
+    drawCurve2(
+        canvas.width - start.x,
+        canvas.height - start.y, [
+            [canvas.width - start.x, canvas.height - start.y, canvas.width - cp1.x ,canvas.height -  cp1.y],
+            [canvas.width - cp2.x, canvas.height - cp2.y, canvas.width - end.x, canvas.height - end.y]
+        ],
+        pattern
+    );
 }
 
 
@@ -218,18 +341,20 @@ function drawPieceAt(xOffset, yOffset,p,typee) {
     if(p == player){
         if(typee == "plane"){
             console.log("type is ",typee)
-            drawImage(ctx,planeImg,xOffset-25,yOffset-25,50,50,180);
-        }else{
+            drawImage(ctx,planeImg,xOffset-25,yOffset-25,50,50,0);
+        }
+        if(typee == "ship"){
             drawImage(ctx,shipImg,xOffset-25,yOffset-25,50,50,180);
         }
     }else{
-        var x = 320 - xOffset
-        var y = 568 - yOffset
+        var x = canvas.width - xOffset
+        var y = canvas.height - yOffset
         console.log("type is ",typee)
         if(typee == "plane"){
-            drawImage(ctx,planeImg,320-xOffset-25,568-yOffset-25,50,50,0);
-        }else{
-            drawImage(ctx,shipImg,320-xOffset-25,568-yOffset-25,50,50,0);
+            drawImage(ctx,planeImg,canvas.width-xOffset-25,canvas.height-yOffset-25,50,50,180);
+        }
+        if(typee == "ship"){
+            drawImage(ctx,shipImg,canvas.width-xOffset-25,canvas.height-yOffset-25,50,50,0);
         }
     }
 
@@ -238,9 +363,6 @@ function drawPieceAt(xOffset, yOffset,p,typee) {
 
 }
 
-
-
-render()
 
 
 
