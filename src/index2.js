@@ -165,7 +165,7 @@ canvas.addEventListener("click",(e)=>{
             }
         }
 
-        if(placeType == "ship" &&){
+        if(placeType == "ship"){
             if(!isPointOnLand(cursor_x,cursor_y-50)){
                 alert("Trying to place boat on water.")
                 if(isPointOnSide(cursor_x,cursor_y-50)){
