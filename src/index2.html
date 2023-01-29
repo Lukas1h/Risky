@@ -20,7 +20,7 @@
                 border-bottom-style: solid;
 
                 align-items: center;
-                justify-content: space-around;
+                justify-content: center;
             }
 
 
@@ -45,7 +45,15 @@
 
             }
 
+            .button{
+                padding: 0px;
+                margin: 0px 20px;
+            }
 
+            .icon {
+                width: 35px;
+                height: 35px;
+            }
 
             canvas {
                 image-rendering: pixelated;
@@ -61,11 +69,11 @@
 
         <div id="con">
             <div id="menu">
-                <button id="plane">
-                    Plane
+                <button id="plane" class="button">
+                    <img src="icons/plane1.png" class="icon" alt="">
                 </button>
-                <button id="ship">
-                    Ship
+                <button id="ship" class="button">
+                    <img src="icons/boat.png" class="icon" alt="">
                 </button>
             </div>
             <canvas id="canvas" width="320" height="568">
