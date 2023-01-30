@@ -44,12 +44,7 @@ var xPan = 0
 var yPan = 0
 
 
-var frame = {
-  start: null,
-  delta: null,
-  count: 0
-};
-
+var frame = 0
 const INTERVAL = 16;
 
 
@@ -143,92 +138,107 @@ groundImg.src = "icons/forest_tiles.png"
 
 var pattern = ctx.createPattern(groundImg, "repeat");
 
-var debug = false
-
-
 groundImg.onload = () => { // Only use the image after it's loaded
   pattern = ctx.createPattern(groundImg, "repeat");
 };
 
+waterFrame = 1
 
-// canvas.addEventListener("click",(e)=>{
-//     if(debug){
-//         alert("Trying to place piece")
-//     }
-//     alert("screen shot this, " + cursor_x + "x" + (cursor_y-50))
-//     if(mode == "place"){
-//         if(placeType == "plane"){
-//             if(isPointOnSide(cursor_x,cursor_y-50)){
-//                 if(debug){
-//                     alert("Placing Plane")
-//                 }
-//                 game.players[player-1].pieces.push({
-//                     pos:{
-//                         x:cursor_x,
-//                         y:cursor_y-50,
-//                     },
-//                     type:placeType
-//                 })
-//             }else{
-//                 if(debug){
-//                     alert("Cant place. Not on side.")
-//                 }
-//             }
-//         }
+const waterImg1 = new Image();
+waterImg1.src = "icons/water1.png"
+const waterImg2 = new Image();
+waterImg2.src = "icons/water2.png"
+const waterImg3 = new Image();
+waterImg3.src = "icons/water3.png"
 
-//         if(placeType == "ship"){
-//             if(!isPointOnLand(cursor_x,cursor_y-50)){
-//                 alert("Trying to place boat on water.")
-//                 if(isPointOnSide(cursor_x,cursor_y-50)){
-//                     alert("Placing Boat")
-//                     game.players[player-1].pieces.push({
-//                     pos:{
-//                         x:cursor_x,
-//                         y:cursor_y-50,
-//                     },
-//                     type:placeType
-//                 })
-//                 }else{
-//                     if(debug){
-//                         alert("Cant place. Not on side.")
-//                     }
-//                 }
-//             }else{
-//                 if(debug){
-//                     alert("Cant place. Not on land.")
-//                 }
-//             }
+var waterPattern1 = ctx.createPattern(waterImg1, "repeat");
+var waterPattern2 = ctx.createPattern(waterImg2, "repeat");
+var waterPattern3 = ctx.createPattern(waterImg3, "repeat");
 
-//         }
+waterImg1.onload = () => { // Only use the image after it's loaded
+  waterPattern1 = ctx.createPattern(waterImg1, "repeat");
+};
+waterImg2.onload = () => { // Only use the image after it's loaded
+  waterPattern2 = ctx.createPattern(waterImg2, "repeat");
+};
+
+waterImg3.onload = () => { // Only use the image after it's loaded
+  waterPattern3 = ctx.createPattern(waterImg3, "repeat");
+};
+
+var justDraggin = false
 
 
-//         gameRef.set(JSON.stringify(game))
-//         render()
-//     }else{
-//         console.log(mode)
-//     }
-// })
+function getWindowToCanvas(x, y) {
+  var rect = canvas.getBoundingClientRect();
+  var screenX = (x - rect.left) * (canvas.width / rect.width);
+  var screenY = (y - rect.top) * (canvas.height / rect.height);
+  var transform = ctx.getTransform();
+  if (transform.isIdentity) {
+    return {
+      x: screenX,
+      y: screenY
+    };
+  } else {
+    //   console.log(transform.invertSelf()); //don't invert twice!!
+    const invMat = transform.invertSelf();
+
+    return {
+      x: Math.round(screenX * invMat.a + screenY * invMat.c + invMat.e),
+      y: Math.round(screenX * invMat.b + screenY * invMat.d + invMat.f)
+    };
+  }
+}
+
+
+function handelClick(x,y){
+
+    if(player == 1){
+        game.players[player-1].pieces.push({
+            pos:{
+                x:getWindowToCanvas(x,y).x,
+                y:getWindowToCanvas(x,y).y
+            },
+            rot:0,
+            type:placeType
+        })
+        gameRef.set(JSON.stringify(game))
+    }
+
+    if(player == 2){
+        game.players[player-1].pieces.push({
+            pos:{
+                x:getWindowToCanvas(x,y).x,
+                y:getWindowToCanvas(x,y).y
+            },
+            rot:180,
+            type:placeType
+        })
+        gameRef.set(JSON.stringify(game))
+    }
+}
 
 
 function render(){
-    ctx.translate(-xPan,-yPan)
+
+
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    drawWater()
+    drawIsland(0,100)
 
-
-    renderUI()
-    drawIslandP1()
-    drawIslandP2()
+    drawIsland(0,-1200)
+    // drawIslandP1()
+    // drawIslandP2()
     
 
     for(var playerNum = 1; playerNum<=2;playerNum++){
         game.players[playerNum-1].pieces.forEach((piece,index)=>{
             // console.log("drawing, ", piece.type)
-            drawPieceAt(piece.pos.x,piece.pos.y,playerNum,piece.type)
+            drawPieceAtNonBiased(piece.pos.x,piece.pos.y,piece.type,piece.rot)
             
         })
     }
 
-    ctx.translate(xPan,yPan)
 }
 
 function isPointOnSide(px,py){
@@ -236,123 +246,6 @@ function isPointOnSide(px,py){
     return !(canvas.height - py > 150)
 }
 
-function isPointOnLand(px,py){
-
-
-    let start = game.islands[0].start
-    let cp1 =   game.islands[0].cp1
-    let cp2 =   game.islands[0].cp2
-    let end =   game.islands[0].end
-
-    let x = start.x
-    let y = start.y
-
-    let curves = [
-        [start.x, start.y, cp1.x , cp1.y],
-        [cp2.x, cp2.y, end.x, end.y]
-    ]
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    for (let i = 0; i < curves.length; i++) {
-        let c = curves[i];
-        ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
-    }
-    ctx.lineTo(canvas.width, canvas.height);
-    ctx.lineTo(0, canvas.height);
-
-    return ctx.isPointInPath(px , py)
-
-
-}
-
-function checkPoint(x, y, curves, canvasColor, strokeStyle) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  for (let i = 0; i < curves.length; i++) {
-    let c = curves[i];
-    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
-  }
-  ctx.lineTo(canvas.width, canvas.height);
-  ctx.lineTo(0, canvas.height);
-
-  ctx.fillStyle = pattern;
-  ctx.fill();
-
-}
-
-
-function drawCurve(x, y, curves, canvasColor, strokeStyle) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  for (let i = 0; i < curves.length; i++) {
-    let c = curves[i];
-    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
-  }
-  ctx.lineTo(canvas.width, canvas.height);
-  ctx.lineTo(0, canvas.height);
-
-  ctx.fillStyle = pattern;
-  ctx.fill();
-}
-
-
-function drawCurve2(x, y, curves, canvasColor, strokeStyle) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  for (let i = 0; i < curves.length; i++) {
-    let c = curves[i];
-    ctx.quadraticCurveTo(c[0], c[1], c[2], c[3]);
-  }
-  ctx.lineTo(0, 0);
-  ctx.lineTo(canvas.width, 0);
-
-  ctx.fillStyle = pattern;
-  ctx.fill();
-}
-
-
-function drawIslandP1(){
-
-  let start = game.islands[0].start
-  let cp1 =   game.islands[0].cp1
-  let cp2 =   game.islands[0].cp2
-  let end =   game.islands[0].end
-
-
-//   console.log(start,cp1,cp2,end)
-    drawCurve(
-        start.x,
-        start.y, [
-            [start.x, start.y, cp1.x , cp1.y],
-            [cp2.x, cp2.y, end.x, end.y]
-        ],
-        pattern
-    );
-}
-
-function drawIslandP2(){
-    
-
-    let start = game.islands[1].start
-    let cp1 =   game.islands[1].cp1
-    let cp2 =   game.islands[1].cp2
-    let end =   game.islands[1].end
-
-    ctx.beginPath();
-    ctx.moveTo(canvas.width - start.x, canvas.height - start.y); //canvas.height - start.y
-    ctx.bezierCurveTo(canvas.width - cp1.x, canvas.height - cp1.y, canvas.width - cp2.x, canvas.height - cp2.y, canvas.width - end.x, canvas.height - end.y);
-    ctx.stroke();
-
-    drawCurve2(
-        canvas.width - start.x,
-        canvas.height - start.y, [
-            [canvas.width - start.x, canvas.height - start.y, canvas.width - cp1.x ,canvas.height -  cp1.y],
-            [canvas.width - cp2.x, canvas.height - cp2.y, canvas.width - end.x, canvas.height - end.y]
-        ],
-        pattern
-    );
-}
 
 
 function renderUI(){
@@ -360,36 +253,23 @@ function renderUI(){
     ctx.fillText(player == 1 ? "Player One" : "Player Two", 10, 20);
 }
 
+function drawPieceAtNonBiased(xOffset, yOffset,type,rot) {
 
-function drawPieceAt(xOffsetOG, yOffsetOG,p,typee) {
 
 
-    xOffset = xOffsetOG + xPan
-    yOffset = yOffsetOG + yPan
-    if(p == player){
-        if(typee == "plane"){
-            // console.log("type is ",typee)
-            drawImage(ctx,planeImg,xOffset-25,yOffset-25,50,50,0);
-        }
-        if(typee == "ship"){
-            drawImage(ctx,shipImg,xOffset-25,yOffset-25,50,50,180);
-        }
-    }else{
-        var x = canvas.width - xOffset
-        var y = canvas.height - yOffset
+    if(type == "plane"){
         // console.log("type is ",typee)
-        if(typee == "plane"){
-            drawImage(ctx,planeImg,canvas.width-xOffset-25,canvas.height-yOffset-25,50,50,180);
-        }
-        if(typee == "ship"){
-            drawImage(ctx,shipImg,canvas.width-xOffset-25,canvas.height-yOffset-25,50,50,0);
-        }
+        drawImage(ctx,planeImg,xOffset-25,yOffset-25,50,50,rot);
+    }
+    if(type == "ship"){
+        drawImage(ctx,shipImg,xOffset-25,yOffset-25,50,50,rot + 180);
     }
 
 
 
 
 }
+
 
 
 function drawImage(ctx, image, x, y, w, h, degrees){
@@ -401,32 +281,42 @@ function drawImage(ctx, image, x, y, w, h, degrees){
   ctx.restore();
 }
 
+function drawIsland(xoff, yoff) {
+    var xmul = 1.3
+    var ymul = 2
+  ctx.beginPath();
+      ctx.moveTo(39 * xmul + xoff, 300 * ymul + yoff);
+    ctx.bezierCurveTo(21 * xmul + xoff, 234 * ymul + yoff, 59 * xmul + xoff, 203 * ymul + yoff, 204 * xmul + xoff, 193 * ymul + yoff)
+    ctx.bezierCurveTo(223.95260656845966 * xmul + xoff, 191.62395816769245 * ymul + yoff, 288 * xmul + xoff, 180 * ymul + yoff, 390 * xmul + xoff, 229 * ymul + yoff)
+    ctx.bezierCurveTo(452 * xmul + xoff, 274 * ymul + yoff, 475 * xmul + xoff, 211 * ymul + yoff, 569 * xmul + xoff, 191 * ymul + yoff)
+    ctx.bezierCurveTo(686 * xmul + xoff, 175 * ymul + yoff, 634 * xmul + xoff, 156 * ymul + yoff, 764 * xmul + xoff, 170 * ymul + yoff)
+    ctx.bezierCurveTo(920 * xmul + xoff, 193 * ymul + yoff, 969 * xmul + xoff, 199 * ymul + yoff, 970 * xmul + xoff, 253 * ymul + yoff)
+    ctx.bezierCurveTo(971 * xmul + xoff, 362 * ymul + yoff, 837 * xmul + xoff, 456 * ymul + yoff, 745 * xmul + xoff, 456 * ymul + yoff)
+    ctx.bezierCurveTo(649 * xmul + xoff, 453 * ymul + yoff, 464 * xmul + xoff, 415 * ymul + yoff, 387 * xmul + xoff, 414 * ymul + yoff)
+    ctx.bezierCurveTo(286 * xmul + xoff, 416 * ymul + yoff, 148 * xmul + xoff, 464 * ymul + yoff, 96 * xmul + xoff, 449 * ymul + yoff)
+    ctx.bezierCurveTo(76.7835281763821 * xmul + xoff, 443.4567869739564 * ymul + yoff, 62 * xmul + xoff, 432 * ymul + yoff, 44 * xmul + xoff, 377 * ymul + yoff)
+  ctx.closePath()
+  ctx.fillStyle = pattern
+  ctx.fill()
+
+}
 
 
+function drawWater(){
 
-// function run(func) {
-//   if (!frame.start) frame.start = performance.now();
-//   frame.delta = performance.now() - frame.start;
-//   if (frame.delta >= INTERVAL) {
-//     func.call();
-//     frame.start = null; //reset
-//     frame.count++;
-//   }
-//   //for this example the loop will be repeated only 100 time
-//   requestAnimationFrame(run.bind(null, func));
-//   //without counting limit
-//   //requestAnimationFrame(run.bind(null, func));
-// }
+    ctx.fillStyle = waterPattern1
+    ctx.fillRect(-3000,-3000, 6000, 6000);
 
 
-// run(render)
+}
 
 
-let cameraOffset = { x: window.innerWidth/2, y: window.innerHeight/2 }
+let cameraOffset = { x: (window.innerWidth/2) - 300, y: (window.innerHeight/2)- 300 }
 let cameraZoom = 1
-let MAX_ZOOM = 5
-let MIN_ZOOM = 0.1
+let MAX_ZOOM = 1
+let MIN_ZOOM = 0.3
 let SCROLL_SENSITIVITY = 0.0005
+
 
 function draw()
 {
@@ -437,11 +327,24 @@ function draw()
     ctx.translate( window.innerWidth / 2, window.innerHeight / 2 )
     ctx.scale(cameraZoom, cameraZoom)
     ctx.translate( -window.innerWidth / 2 + cameraOffset.x, -window.innerHeight / 2 + cameraOffset.y )
+ 
+    if(player == 2){
+        ctx.rotate(Math.PI)
+        ctx.translate(-canvas.width,-canvas.height)
+    }
     ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
     render()
     
+    // if(player == 2){
+    //     ctx.translate(canvas.width,canvas.height)
+    //     ctx.rotate(Math.PI)
+    // }
+    // renderUI()
+    
     requestAnimationFrame( draw )
 }
+
+
 
 // Gets the relevant location from a mouse or single touch event
 function getEventLocation(e)
@@ -456,24 +359,14 @@ function getEventLocation(e)
     }
 }
 
-function drawRect(x, y, width, height)
-{
-    ctx.fillRect( x, y, width, height )
-}
-
-function drawText(text, x, y, size, font)
-{
-    ctx.font = `${size}px ${font}`
-    ctx.fillText(text, x, y)
-}
-
 
 let isDragging = false
 let dragStart = { x: 0, y: 0 }
-
+justDraggin = false 
 function onPointerDown(e)
 {
     isDragging = true
+    justDraggin = false
     dragStart.x = getEventLocation(e).x/cameraZoom - cameraOffset.x
     dragStart.y = getEventLocation(e).y/cameraZoom - cameraOffset.y
 }
@@ -483,10 +376,16 @@ function onPointerUp(e)
     isDragging = false
     initialPinchDistance = null
     lastZoom = cameraZoom
+
+    if(justDraggin == false){
+        handelClick(e.clientX,e.clientY)
+    }
+    justDraggin = false
 }
 
 function onPointerMove(e)
 {
+    justDraggin = true
     if (isDragging)
     {
         cameraOffset.x = getEventLocation(e).x/cameraZoom - dragStart.x
@@ -495,6 +394,7 @@ function onPointerMove(e)
 }
 
 function handleTouch(e, singleTouchHandler)
+
 {
     if ( e.touches.length == 1 )
     {
@@ -540,14 +440,12 @@ function adjustZoom(zoomAmount, zoomFactor)
         }
         else if (zoomFactor)
         {
-            console.log(zoomFactor)
             cameraZoom = zoomFactor*lastZoom
         }
         
         cameraZoom = Math.min( cameraZoom, MAX_ZOOM )
         cameraZoom = Math.max( cameraZoom, MIN_ZOOM )
         
-        console.log(zoomAmount)
     }
 }
 
